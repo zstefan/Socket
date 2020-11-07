@@ -7,18 +7,19 @@
 #include <string>
 #include <memory>
 
-#ifdef __linux__ 
-#include <sys/types.h> 
+#ifdef __linux__
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h> 
+#include <netdb.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #elif _WIN32
 #include <winsock2.h>
+#include <winsock.h>
 #include <ws2tcpip.h>
 #else
-    #error Unsupported OS
+#error Unsupported OS
 #endif
 
 #define DEFAULT_PORT 15717
@@ -26,79 +27,77 @@
 namespace Network
 {
 
-class MySocket
-{
-    public:
-    /**
-    * @brief This is the socket domain types
-    *
-    */
-    enum struct Domain {
-    D_UNSPEC,
-    D_LOCAL = 1,
-    D_UNIX = 1,
-    D_FILE = 1,
-    D_INET = 2,
-    D_AX25,
-    D_IPX,
-    D_APPLETALK,
-    D_NETROM,
-    D_BRIDGE,
-    D_ATMPVC,
-    D_X25,
-    D_INET6,
-    D_ROSE,
-    D_DECnet,
-    D_NETBEUI,
-    D_SECURITY,
-    D_KEY,
-    D_NETLINK,
-    D_ROUTE,
-    D_PACKET,
-    D_ASH,
-    D_ECONET,
-    D_ATMSVC,
-    D_RDS,
-    D_SNA,
-    D_IRDA,
-    D_PPPOX,
-    D_WANPIPE,
-    D_LLC,
-    D_IB,
-    D_MPLS,
-    D_CAN,
-    D_TIPC,
-    D_BLUETOOTH,
-    D_IUCV,
-    D_RXRPC,
-    D_ISDN,
-    D_PHONET,
-    D_IEEE802154,
-    D_CAIF,
-    D_ALG,
-    D_NFC,
-    D_VSOCK,
-    D_KCM,
-    D_QIPCRTR,
-    D_SMC,
-    D_MAX,
-  };
+    class MySocket
+    {
 
-    /**
-    * @brief This is the socket type definition
-    *
-    */
-    enum struct Type { SOCK_STREAM = 1, SOCK_DGRAM = 2, SOCK_RAW = 3 };
-    
-    private:
-        // int sockFD;
-        // int family;
-        // int socketType;
-        // uint32_t address;
-        // int port;
-        struct impl;
-        std::unique_ptr<impl> pimpl;
     public:
+        /**
+        * @brief This is the socket domain types
+        *
+        */
+        enum struct Domain
+        {
+            D_UNSPEC,
+            D_LOCAL = 1,
+            D_UNIX = 1,
+            D_FILE = 1,
+            D_INET = 2,
+            D_AX25,
+            D_IPX,
+            D_APPLETALK,
+            D_NETROM,
+            D_BRIDGE,
+            D_ATMPVC,
+            D_X25,
+            D_INET6,
+            D_ROSE,
+            D_DECnet,
+            D_NETBEUI,
+            D_SECURITY,
+            D_KEY,
+            D_NETLINK,
+            D_ROUTE,
+            D_PACKET,
+            D_ASH,
+            D_ECONET,
+            D_ATMSVC,
+            D_RDS,
+            D_SNA,
+            D_IRDA,
+            D_PPPOX,
+            D_WANPIPE,
+            D_LLC,
+            D_IB,
+            D_MPLS,
+            D_CAN,
+            D_TIPC,
+            D_BLUETOOTH,
+            D_IUCV,
+            D_RXRPC,
+            D_ISDN,
+            D_PHONET,
+            D_IEEE802154,
+            D_CAIF,
+            D_ALG,
+            D_NFC,
+            D_VSOCK,
+            D_KCM,
+            D_QIPCRTR,
+            D_SMC,
+            D_MAX,
+        };
+
+        /**
+        * @brief This is the socket type definition
+        *
+        */
+        enum struct Type
+        {
+            SOCKET_STREAM = 1,
+            SOCKET_DGRAM = 2,
+            SOCKET_RAW = 3
+        };
+
         /**
          * @brief Constructor that should be used by server side to initialize all params
          *
@@ -116,7 +115,7 @@ class MySocket
          * @param portNum Server port number
          * @param address Server address
          */
-        MySocket(Domain domain, int portNum, const char* address);
+        MySocket(Domain domain, int portNum, const char *address);
 
         /**
          * @brief Constructor that should be used by server side with default address of the machine on which the server is running
@@ -149,12 +148,10 @@ class MySocket
         MySocket();
         ~MySocket();
 
-
         MySocket(const MySocket &) = delete;
         MySocket &operator=(const MySocket &) = delete;
         MySocket(MySocket &&) = delete;
         MySocket &operator=(const MySocket &&) = delete;
-
 
         /**
          * @brief This is the function for creating socket
@@ -179,7 +176,7 @@ class MySocket
          * @return  true if option is successfully set, otherwise return false
          */
         bool SetSockOption(int optName, int optValue);
-        
+
         /**
          * @brief This is the function for setting socket options
          *
@@ -191,6 +188,7 @@ class MySocket
          */
         bool SetSockOption(int level, int optName, int optValue);
 
+
         /**
          * @brief This is the function for setting socket options
          *
@@ -201,8 +199,11 @@ class MySocket
          *
          * @return  true if option is successfully set, otherwise return false
          */
-        bool SetSockOption(int level, int optName, const void* optValue, socklen_t optLen);
-
+    #ifdef __linux__
+        bool SetSockOption(int level, int optName, const void *optValue, socklen_t optLen);
+    #elif _WIN32
+        bool SetSockOption(int level, int optName, const char *optValue, socklen_t optLen);
+    #endif
         /**
          * @brief This is the function that allows listening on the socket for connections
          *
@@ -222,7 +223,7 @@ class MySocket
          * @return  Pointer to client socket if operation was successfly, otherwise return nullptr
          */
         std::unique_ptr<MySocket> Accept();
-        
+
         /**
          * @brief This is the function for establish a connection to the server
          *
@@ -243,7 +244,7 @@ class MySocket
          *
          * @return  true if connection was established, otherwise return false
          */
-        bool Connect(int family, int portNum, const char* address);
+        bool Connect(int family, int portNum, const char *address);
 
         /**
          * @brief This is the function that recieves data in a buffer from specified socket. It should be used for SOCK_STREAM sockets by server side
@@ -278,7 +279,7 @@ class MySocket
          *
          * @return The number of bytes received or -1 if an error occurred
          */
-        int RecieveFrom(char *buf, size_t bufSize, int flags, MySocket& fromSock);
+        int RecieveFrom(char *buf, size_t bufSize, int flags, MySocket &fromSock);
 
         /**
          * @brief This is the function that reads data in a buffer from specified socket. It should be used for SOCK_STREAM sockets by server side
@@ -333,7 +334,7 @@ class MySocket
          *
          * @return The number of bytes sent or -1 if an error occurred
          */
-        int SendTo(const char* buf, int bufLen, int flags, const MySocket& destSock);
+        int SendTo(const char *buf, int bufLen, int flags, const MySocket &destSock);
 
         /**
          * @brief This is the function that writes data from a buffer to specified socket. It should be used for SOCK_STREAM sockets by server side
@@ -353,13 +354,13 @@ class MySocket
          * @param bufLen Specifies the length in bytes of the buffer pointed to by the buf argument
          *
          * @return The number of bytes sent or -1 if an error occurred
-         */ 
+         */
         int Write(const char *buf, int bufLen);
-        
+
         /**
          * @brief This is the function that returns a file descriptor of socket
          */
-        int GetFD() const; 
+        int GetFD() const;
 
         /**
          * @brief This is the function that returns a port number of socket
@@ -375,13 +376,14 @@ class MySocket
          * @brief This is the function that returns an address of socket as unsigned int
          */
         uint32_t GetAddress() const;
-    
+
     private:
+        struct impl;
+        std::unique_ptr<impl> pimpl;
         MySocket(int sock, struct sockaddr_in addr);
         sockaddr_in GetAddrStruct() const;
         void SetParamsFromStruct(struct sockaddr_in newAddr);
         void PrintError(const char *msg);
-        
-};
+    };
 
-}
+} // namespace Network

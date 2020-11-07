@@ -10,4 +10,6 @@ add_library(${this} SHARED ./include/Network/MySocket.h ./src/MySocket.cpp)
 
 target_include_directories(${this} PUBLIC include)
 
-
+if(WIN32)
+  target_link_libraries(${this} wsock32 ws2_32)
+endif()

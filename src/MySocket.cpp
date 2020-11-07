@@ -4,6 +4,15 @@
 namespace Network
 {
 
+void universalBzero(char* buffer, size_t length)
+{
+    #ifdef __linux__
+    bzero(buffer, length);
+    #elif _WIN32
+    memset(buffer,'\0',length);
+    #endif
+}
+
 #if _WIN32
     using socketfd_t = SOCKET;
 #else
@@ -35,7 +44,7 @@ MySocket::MySocket(Domain domain, int portNum, const char* address)
 {
 	this->pimpl->port = portNum; 
     this->pimpl->domain = domain;
-    this->pimpl->socketType = MySocket::Type::SOCK_DGRAM;
+    this->pimpl->socketType = MySocket::Type::SOCKET_DGRAM;
     struct hostent *server;
 
     server = gethostbyname(address);
@@ -115,9 +124,12 @@ bool MySocket::SetSockOption(int optName, int optValue)
 
 bool MySocket::SetSockOption(int level, int optName, int optValue)
 {
-    return SetSockOption(level, optName, &optValue, sizeof(optValue));
+    std::string s = std::to_string(optValue);
+    char const *pchar = s.c_str();
+    return SetSockOption(level, optName, pchar, sizeof(optValue));
 }
 
+#ifdef __linux__
 bool MySocket::SetSockOption(int level, int optName, const void* optValue, socklen_t optLen)
 {
     if(setsockopt(this->pimpl->sockFD, level, optName, optValue, optLen) == -1)
@@ -127,7 +139,17 @@ bool MySocket::SetSockOption(int level, int optName, const void* optValue, sockl
     }
     return true;
 }
-
+#elif _WIN32
+bool MySocket::SetSockOption(int level, int optName, const char* optValue, socklen_t optLen)
+{
+    if(setsockopt(this->pimpl->sockFD, level, optName, optValue, optLen) == -1)
+    {
+        PrintError("ERROR on setting option");
+        return false;
+    }
+    return true;
+}
+#endif
 void MySocket::Listen(int queue)
 {
     if(queue > 0 && queue < 6)
@@ -192,7 +214,12 @@ bool MySocket::Connect(int family, int portNum, const char* address)
 
 int MySocket::Recieve(int sock, char *buf, size_t bufSize, int flags)
 {
-    bzero(buf, bufSize);
+    // #ifdef __linux__
+    // bzero(buf, bufSize);
+    // #elif _WIN32
+    // memset(buf,'\0',bufSize);
+    // #endif
+    universalBzero(buf, bufSize);
     int n = recv(sock, buf, bufSize, flags);
     if (n < 0) 
         PrintError("ERROR receiving from socket");
@@ -207,7 +234,12 @@ int MySocket::Recieve(char *buf, size_t bufSize, int flags)
 
 int MySocket::RecieveFrom(char *buf, size_t bufSize, int flags, MySocket& fromSock)
 {
-    bzero(buf, bufSize);
+    // #ifdef __linux__
+    // bzero(buf, bufSize);
+    // #elif _WIN32
+    // memset(buf,'\0',bufSize);
+    // #endif
+    universalBzero(buf,bufSize);
     socklen_t fromlen = sizeof(struct sockaddr_in);
     struct sockaddr_in from;
 
@@ -225,7 +257,12 @@ int MySocket::RecieveFrom(char *buf, size_t bufSize, int flags, MySocket& fromSo
 
 int MySocket::Read(int sock, char *buf, size_t bufSize)
 {
-    bzero(buf, bufSize);
+    // #ifdef __linux__
+    // bzero(buf, bufSize);
+    // #elif _WIN32
+    // memset(buf,'\0',bufSize);
+    // #endif
+    universalBzero(buf,bufSize);
     int n = read(sock, buf, bufSize);
     if (n < 0) 
         PrintError("ERROR reading from socket");
@@ -286,7 +323,13 @@ void MySocket::SetParamsFromStruct(struct sockaddr_in newAddr)
 sockaddr_in MySocket::GetAddrStruct() const
 {
     struct sockaddr_in retValue;
-    bzero((char *) &retValue, sizeof(retValue));
+    // //bzero((char *) &retValue, sizeof(retValue));
+    // #ifdef __linux__
+    // bzero((char *) &retValue, sizeof(retValue));
+    // #elif _WIN32
+    // memset((char *) &retValue,'\0',sizeof(retValue));
+    // #endif
+    universalBzero((char*)&retValue, sizeof(retValue));
     retValue.sin_family = (int)this->pimpl->domain;
     retValue.sin_addr.s_addr = this->pimpl->address;
     retValue.sin_port = htons(this->pimpl->port);
